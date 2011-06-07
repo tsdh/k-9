@@ -3,6 +3,7 @@ package com.fsck.k9.mail;
 import java.util.Date;
 
 import android.util.Log;
+
 import com.fsck.k9.Account;
 import com.fsck.k9.K9;
 import com.fsck.k9.Preferences;
@@ -11,6 +12,24 @@ import com.fsck.k9.controller.MessageRetrievalListener;
 
 public abstract class Folder {
     protected final Account mAccount;
+    /**
+     * If true, this folder is its own sent folder (aka Folder Carbon Copy).
+     */
+    protected boolean mFcc;
+
+    /**
+     * @return the mFcc
+     */
+    public boolean isFcc() {
+        return mFcc;
+    }
+
+    /**
+     * @param mFcc the mFcc to set
+     */
+    public void setFcc(boolean mFcc) {
+        this.mFcc = mFcc;
+    }
 
     private String status = null;
     private long lastChecked = 0;

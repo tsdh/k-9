@@ -1,4 +1,3 @@
-
 package com.fsck.k9.activity.setup;
 
 import android.content.Context;
@@ -9,7 +8,11 @@ import android.preference.ListPreference;
 import android.preference.Preference;
 import android.util.Log;
 import android.view.KeyEvent;
-import com.fsck.k9.*;
+
+import com.fsck.k9.Account;
+import com.fsck.k9.K9;
+import com.fsck.k9.Preferences;
+import com.fsck.k9.R;
 import com.fsck.k9.activity.K9PreferenceActivity;
 import com.fsck.k9.mail.Folder.FolderClass;
 import com.fsck.k9.mail.Folder.OpenMode;
@@ -30,16 +33,19 @@ public class FolderSettings extends K9PreferenceActivity {
     private static final String PREFERENCE_PUSH_CLASS = "folder_settings_folder_push_mode";
     private static final String PREFERENCE_IN_TOP_GROUP = "folder_settings_in_top_group";
     private static final String PREFERENCE_INTEGRATE = "folder_settings_include_in_integrated_inbox";
+    private static final String PREFERENCE_FCC = "folder_settings_folder_carbon_copy";
 
     private LocalFolder mFolder;
 
     private CheckBoxPreference mInTopGroup;
     private CheckBoxPreference mIntegrate;
+    private CheckBoxPreference mFcc;
     private ListPreference mDisplayClass;
     private ListPreference mSyncClass;
     private ListPreference mPushClass;
 
-    public static void actionSettings(Context context, Account account, String folderName) {
+    public static void actionSettings(Context context, Account account,
+                                      String folderName) {
         Intent i = new Intent(context, FolderSettings.class);
         i.putExtra(EXTRA_FOLDER_NAME, folderName);
         i.putExtra(EXTRA_ACCOUNT, account.getUuid());
@@ -50,16 +56,19 @@ public class FolderSettings extends K9PreferenceActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        String folderName = (String)getIntent().getSerializableExtra(EXTRA_FOLDER_NAME);
+        String folderName = (String) getIntent().getSerializableExtra(
+                                EXTRA_FOLDER_NAME);
         String accountUuid = getIntent().getStringExtra(EXTRA_ACCOUNT);
-        Account mAccount = Preferences.getPreferences(this).getAccount(accountUuid);
+        Account mAccount = Preferences.getPreferences(this).getAccount(
+                               accountUuid);
 
         try {
             LocalStore localStore = mAccount.getLocalStore();
             mFolder = localStore.getFolder(folderName);
             mFolder.open(OpenMode.READ_WRITE);
         } catch (MessagingException me) {
-            Log.e(K9.LOG_TAG, "Unable to edit folder " + folderName + " preferences", me);
+            Log.e(K9.LOG_TAG, "Unable to edit folder " + folderName
+                  + " preferences", me);
             return;
         }
 
@@ -77,17 +86,20 @@ public class FolderSettings extends K9PreferenceActivity {
         Preference category = findPreference(PREFERENCE_TOP_CATERGORY);
         category.setTitle(folderName);
 
-
-        mInTopGroup = (CheckBoxPreference)findPreference(PREFERENCE_IN_TOP_GROUP);
+        mInTopGroup = (CheckBoxPreference) findPreference(PREFERENCE_IN_TOP_GROUP);
         mInTopGroup.setChecked(mFolder.isInTopGroup());
-        mIntegrate = (CheckBoxPreference)findPreference(PREFERENCE_INTEGRATE);
+        mIntegrate = (CheckBoxPreference) findPreference(PREFERENCE_INTEGRATE);
         mIntegrate.setChecked(mFolder.isIntegrate());
+        mFcc = (CheckBoxPreference) findPreference(PREFERENCE_FCC);
+        mFcc.setChecked(mFolder.isFcc());
 
         mDisplayClass = (ListPreference) findPreference(PREFERENCE_DISPLAY_CLASS);
         mDisplayClass.setValue(mFolder.getDisplayClass().name());
         mDisplayClass.setSummary(mDisplayClass.getEntry());
-        mDisplayClass.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-            public boolean onPreferenceChange(Preference preference, Object newValue) {
+        mDisplayClass
+        .setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+            public boolean onPreferenceChange(Preference preference,
+            Object newValue) {
                 final String summary = newValue.toString();
                 int index = mDisplayClass.findIndexOfValue(summary);
                 mDisplayClass.setSummary(mDisplayClass.getEntries()[index]);
@@ -99,8 +111,10 @@ public class FolderSettings extends K9PreferenceActivity {
         mSyncClass = (ListPreference) findPreference(PREFERENCE_SYNC_CLASS);
         mSyncClass.setValue(mFolder.getRawSyncClass().name());
         mSyncClass.setSummary(mSyncClass.getEntry());
-        mSyncClass.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-            public boolean onPreferenceChange(Preference preference, Object newValue) {
+        mSyncClass
+        .setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+            public boolean onPreferenceChange(Preference preference,
+            Object newValue) {
                 final String summary = newValue.toString();
                 int index = mSyncClass.findIndexOfValue(summary);
                 mSyncClass.setSummary(mSyncClass.getEntries()[index]);
@@ -113,8 +127,10 @@ public class FolderSettings extends K9PreferenceActivity {
         mPushClass.setEnabled(isPushCapable);
         mPushClass.setValue(mFolder.getRawPushClass().name());
         mPushClass.setSummary(mPushClass.getEntry());
-        mPushClass.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-            public boolean onPreferenceChange(Preference preference, Object newValue) {
+        mPushClass
+        .setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+            public boolean onPreferenceChange(Preference preference,
+            Object newValue) {
                 final String summary = newValue.toString();
                 int index = mPushClass.findIndexOfValue(summary);
                 mPushClass.setSummary(mPushClass.getEntries()[index]);
@@ -132,7 +148,9 @@ public class FolderSettings extends K9PreferenceActivity {
     private void saveSettings() throws MessagingException {
         mFolder.setInTopGroup(mInTopGroup.isChecked());
         mFolder.setIntegrate(mIntegrate.isChecked());
-        // We call getPushClass() because display class changes can affect push class when push class is set to inherit
+        mFolder.setFcc(mFcc.isChecked());
+        // We call getPushClass() because display class changes can affect push
+        // class when push class is set to inherit
         FolderClass oldPushClass = mFolder.getPushClass();
         FolderClass oldDisplayClass = mFolder.getDisplayClass();
         mFolder.setDisplayClass(FolderClass.valueOf(mDisplayClass.getValue()));
@@ -161,6 +179,5 @@ public class FolderSettings extends K9PreferenceActivity {
         }
         return super.onKeyDown(keyCode, event);
     }
-
 
 }
